@@ -10,6 +10,7 @@ In the terminal, cd to parent directory
 $ LD_LIBRARY_PATH=./lib:./lib64:$LD_LIBRARY_PATH
 $ export LD_LIBRARY_PATH
 $ make
+$ gcc test.c lib64/libmalloc.so
 ```
 ##Troubleshooting##
 If you get this error:
