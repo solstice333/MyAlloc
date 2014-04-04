@@ -21,6 +21,7 @@ In file included from <command-line>:0:0:
  #include <bits/predefs.h>
                           ^
 compilation terminated.
+make: *** [malloc32.o] Error 1
 ```
 Try installing gcc-multilib:
 
