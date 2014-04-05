@@ -13,11 +13,13 @@ $ make
 ```
 
 Compile with custom malloc:
+
 `$ gcc test.c lib64/libmalloc.so`
 
 OR
 
 Compile with stdlib.h:
+
 `$ gcc test.c   # compile with stdlib.h`
 
 ##Troubleshooting##
