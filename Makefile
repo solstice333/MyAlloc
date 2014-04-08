@@ -1,22 +1,21 @@
-intel−all: lib/libmalloc.so lib64/libmalloc.so 
+CC=gcc
+FLAGS=-g
+FILES=test.c malloc.c 
+OBJ=test.o malloc.o 
+OUT=a.out
 
-lib/libmalloc.so: lib malloc32.o
-	gcc $(CFLAGS) -fpic -m32 -shared -o $@ malloc32.o 
+all: build
 
-lib64/libmalloc.so: lib64 malloc64.o
-	gcc $(CFLAGS) -fpic -shared -o $@ malloc64.o 
+build: $(OBJ)
+	$(CC) $(FLAGS) $(OBJ)
 
-lib:
-	mkdir lib
-			
-lib64:
-	mkdir lib64
-			
-malloc32.o: malloc.c
-	gcc $(CFLAGS) -fpic -m32 -c -o malloc32.o malloc.c
-			
-malloc64.o: malloc.c
-	gcc $(CFLAGS) -fpic -m64 -c -o malloc64.o malloc.c
+test.o: test.c malloc.h
+	$(CC) $(FLAGS) -c  test.c
+
+malloc.o: malloc.c malloc.h
+	$(CC) $(FLAGS) -c  malloc.c
 
 clean:
-	rm -f *.o *.a
+	rm -rf $(OBJ) $(OUT)
+
+rebuild: clean build
