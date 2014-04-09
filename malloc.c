@@ -1,29 +1,29 @@
 #include "malloc.h"
 
 static Header *freelist = NULL;
-
 static char buffer[BUFSIZE];
 
 /*
- * Used when a smaller block of space (let's call this block1) can be carved 
- * out from a bigger one for allocation purposes. block1 then points to 
- * the remaining excess (let's call this block2). block2 is returned by
- * carveHeader(). |size| represents the size of block2, |curr| represents
- * the pointer to the start of the initial big block, |next| represents
- * the Header pointer of the initial big block which will be redirected as 
- * block1 pointing to block2.
+ * Used when a smaller block of space can be carved out from a bigger one 
+ * for allocation purposes. The remainder of unneeded space in the initial 
+ * big block will be pointed to by the allocated block header. |size| 
+ * represents the size of the block to be allocated by the caller. |curr| 
+ * represents the Header pointer to the initial big block. The remainder 
+ * block left as excess, pointed to by the allocated block header, is returned.
  */
-static Header *carveHeader(int size, Header *curr, Header *next) {
-   Header *newHeader = (Header *)((char *)curr + sizeof(Header) + 
-    curr->size - size);
+static Header *carveHeader(int size, Header *curr) {
+   char *pos = curr;
+   Header *newHeader = (Header *)(pos + sizeof(Header) + size);
    newHeader->free = 1;
-   newHeader->size = size;
-   newHeader->next = next;
+   newHeader->size = curr->size - size - sizeof(Header);
+   newHeader->next = curr->next;
+   curr->next = newHeader;
    return newHeader;
 }
 
 /*
- *  Pushes |add| to the back of the freelist
+ * Pushes |add| to the back of the freelist. |add|->next will be automatically
+ * set to NULL to signify the end of the freelist
  */
 static void push_back(Header *add) {
    Header *h = freelist, *prev = NULL;
@@ -33,10 +33,10 @@ static void push_back(Header *add) {
       h = h->next;
    }
 
+   add->next = NULL;
    if (prev)
       prev->next = add;
    else {
-      add->next = NULL;
       freelist = add;
    }
 }
@@ -79,9 +79,15 @@ void checkFreelist() {
    }
    snprintf(buffer, BUFSIZE, "current section break: %d", sbrk(0));
    puts(buffer);
+   printf("\n");
 }
 
-// TODO implement this function first
+void *myCalloc(size_t nmemb, size_t size) {
+   void *block = myMalloc(nmemb * size);
+   memset(block, 0, nmemb * size);
+   return block;
+}
+
 void *myMalloc(size_t size) {
    Header *curr = freelist, *prev = NULL, *first = NULL;
 
@@ -89,7 +95,7 @@ void *myMalloc(size_t size) {
    while (curr) {
       if (curr->free && curr->size >= size) {
          if (curr->size > size) {
-            curr->next = carveHeader(curr->size - size, curr, curr->next);
+            curr->next = carveHeader(size, curr);
             curr->size = size;
          }
          curr->free = 0;
@@ -99,12 +105,10 @@ void *myMalloc(size_t size) {
       curr = curr->next;
    }
 
-#if DEBUG_MALLOC
-   snprintf(buffer, BUFSIZE, "%s", "inside your malloc");
-   puts(buffer);
-#endif
-
    Header *header = sbrk(sizeof(Header) + size);     
+   if (header < 0)
+      return NULL;
+
    header->free = 0;
    header->size = size;
    push_back(header);
@@ -113,11 +117,47 @@ void *myMalloc(size_t size) {
 }
 
 void myFree(void *ptr) {
-#if DEBUG_MALLOC
-   snprintf(buffer, BUFSIZE, "%s", "inside your free");
-   puts(buffer);
-#endif
-
    Header *h = (Header *)ptr - 1;
    h->free = 1;
+}
+
+void *myRealloc(void *ptr, size_t size) {
+   if (!ptr)
+      return myMalloc(size);
+   defrag();
+
+   Header *curr = (Header *)ptr - 1;
+   int sum = curr->size;
+
+   curr = curr->next;
+   while (curr && curr->free) {
+      sum += curr->size;
+      curr = curr->next;
+   }
+
+   curr = (Header *)ptr - 1;
+   if (sum >= size) {
+      if (sum > size) {
+         Header *oldHeader = curr->next;
+         Header *newHeader = (char *)curr + sizeof(Header) + size;
+         newHeader->next = oldHeader->next;
+         newHeader->size = sum - size;
+         newHeader->free = 1;
+
+         curr->next = newHeader;
+      }
+      else if (sum == size) 
+         curr->next = curr->next->next;
+
+      curr->size = size;
+   }
+   else {
+      curr->free = 0;
+      char *oldLocation = ++curr;
+      char *newLocation = myMalloc(size);
+      memmove(newLocation, oldLocation, curr->size);
+      curr = (Header *)newLocation - 1;
+   }
+
+   return curr + 1;
 }

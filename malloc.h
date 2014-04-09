@@ -2,6 +2,7 @@
 #define MALLOC_H
 
 #include <unistd.h>
+#include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -13,7 +14,6 @@ typedef struct Header {
    struct Header *next;
 } Header;
 
-void checkFreelist();
 void *myCalloc(size_t nmemb, size_t size);
 void *myMalloc(size_t size);
 void myFree(void *ptr);

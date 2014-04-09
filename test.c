@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "malloc.h"
 #include <stdlib.h>
+#include <assert.h>
 
 #define USING_MY_MALLOC 1
 #define USING_REG_MALLOC 0
@@ -15,103 +16,77 @@ void simplePrint(char *s) {
 
 int main(int argc, char **argv) {
    char *x, *y, *z;
+   int i;
 
 #if USING_MY_MALLOC
-   x = myMalloc(4);
-   simplePrint("allocating 4 bytes...");
+   x = myMalloc(5);
+   simplePrint("allocating 5 bytes...");
    checkFreelist();
 
-   myFree(x);
-   simplePrint("freeing that 4 bytes...");
-   checkFreelist();
-
-   x = myMalloc(20); 
-   simplePrint("allocating 20 bytes...");
-   checkFreelist();
-
-   myFree(x);
-   simplePrint("freeing that 20 bytes...");
-   checkFreelist();
-
-   x = myMalloc(21); 
-   simplePrint("allocating 21 bytes...");
-   checkFreelist();
-
-   myFree(x);
-   simplePrint("freeing that 21 bytes...");
-   checkFreelist();
-
-   x = myMalloc(30); 
-   simplePrint("allocating 30 bytes...");
-   checkFreelist();
-
-   myFree(x);
-   simplePrint("freeing that 30 bytes...");
-   checkFreelist();
+   for (i = 0; i < 5; i++)
+      x[i] = 85;
    
-   x = myMalloc(100); 
-   simplePrint("allocating 100 bytes...");
-   checkFreelist();
-
-   y = myMalloc(101); 
-   simplePrint("allocating 101 bytes...");
+   y = myMalloc(5); 
+   simplePrint("allocating 5 bytes...");
    checkFreelist();
 
    myFree(y);
-   simplePrint("freeing that 101 bytes...");
+   simplePrint("freeing that 5 bytes...");
    checkFreelist();
 
-   y = myMalloc(102); 
-   simplePrint("allocating 102 bytes...");
+   y = myMalloc(7); 
+   simplePrint("allocating 7 bytes...");
    checkFreelist();
 
-   myFree(y);
-   simplePrint("freeing that 102 bytes...");
+   z = myMalloc(10); 
+   simplePrint("allocating 7 bytes...");
    checkFreelist();
 
-   y = myMalloc(200); 
-   simplePrint("allocating 203 bytes...");
+   myFree(z); 
+   simplePrint("freeing that 10 bytes...");
    checkFreelist();
 
-   y = myMalloc(64000);
-   simplePrint("allocating 64K bytes...");
+   x = myRealloc(x, 20);
+   simplePrint("reallcating 20 bytes...");
    checkFreelist();
 
-   myFree(y);
-   simplePrint("freeing that 64K bytes...");
+   for (i = 0; i < 5; i++)
+      fprintf(stderr, "%d\n", x[i]);
+   fprintf(stderr, "\n");
+
+   x = myRealloc(NULL, 20);
    checkFreelist();
 
-   y = myMalloc(1024);
-   simplePrint("allocating 1K bytes...");
-   checkFreelist();
-
-   z = myMalloc(64000);
-   simplePrint("allocating 64K bytes...");
-   checkFreelist();
-
-   myFree(z);
-   simplePrint("freeing that 64K bytes...");
-   checkFreelist();
-
-   z = myMalloc(100);
-   simplePrint("allocating 100 bytes...");
-   checkFreelist();
+   for (i = 0; i < 20; i++)
+      x[i] = i + 1;
+   fprintf(stderr, "\n");
 
    myFree(x);
-   myFree(y);
-   myFree(z);
    checkFreelist();
-   myMalloc(64000);
+
+   x = myCalloc(20, 1);
    checkFreelist();
+
+   for (i = 0; i < 20; i++)
+      fprintf(stderr, "%d\n", x[i]);
+   fprintf(stderr, "\n");
+
+   myFree(myMalloc(65536));
+   checkFreelist();
+   x = myCalloc(32768, 1);
+   checkFreelist();
+
+   for (i = 0; i < 32768; i++)
+      assert(!x[i]);
+   for (i = 0; i < 32768; i++) 
+      x[i] = 100;
+
+   fprintf(stderr, "\n");
+
+
 #elif USING_REG_MALLOC
    int *x = malloc(16000 * sizeof(int));
 #endif
-
-   /*
-   int i;
-   for (i = 0; i < 64000; i++) 
-      z[i] = i % 128;
-   */
 
    return 0;
 }

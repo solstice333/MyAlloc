@@ -1,5 +1,5 @@
 CC=gcc
-FLAGS=-g
+FLAGS=-g -w
 FILES=test.c malloc.c 
 OBJ=test.o malloc.o 
 OUT=a.out
