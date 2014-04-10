@@ -27,14 +27,14 @@ void checkFreelist();
  * result is the allocation of a zero-initialized memory block of 
  * (|nmemb|*|size|) bytes.
  */
-void *myCalloc(size_t nmemb, size_t size);
+void *calloc(size_t nmemb, size_t size);
 
 /*
  * Allocates a block of |size| bytes of memory, returning a pointer to the 
  * beginning of the block. The content of the newly allocated block of memory 
  * is not initialized, remaining with indeterminate values.
  */
-void *myMalloc(size_t size);
+void *malloc(size_t size);
 
 /*
  * A block of memory previously allocated by a call to malloc, calloc or 
@@ -44,7 +44,7 @@ void *myMalloc(size_t size);
  * function does nothing. Notice that this function does not change the value 
  * of ptr itself, hence it still points to the same (now invalid) location.
  */
-void myFree(void *ptr);
+void free(void *ptr);
 
 /*
  * Changes the size of the memory block pointed to by |ptr|. The function may 
@@ -56,7 +56,7 @@ void myFree(void *ptr);
  * like malloc, assigning a new block of |size| bytes and returning a pointer 
  * to its beginning.
  */
-void *myRealloc(void *ptr, size_t size);
+void *realloc(void *ptr, size_t size);
 
 /*
  * The freelist is a linked list implementation of Header objects such that
@@ -140,24 +140,23 @@ static void defrag() {
 void checkFreelist() {
    Header *h = freelist;
    while (h) {
-      snprintf(buffer, BUFSIZE, "at: %d, free: %d, size: %d, next: %d",
+      snprintf(buffer, BUFSIZE, "at: %d, free: %d, size: %d, next: %d\n",
        h, h->free, h->size, h->next);
-      puts(buffer);
+      fputs(buffer, stderr);
       h = h->next;
    }
-   snprintf(buffer, BUFSIZE, "current section break: %d", sbrk(0));
-   puts(buffer);
-   printf("\n");
+   snprintf(buffer, BUFSIZE, "current section break: %d\n\n", sbrk(0));
+   fputs(buffer, stderr);
 }
 
-void *myCalloc(size_t nmemb, size_t size) {
+void *calloc(size_t nmemb, size_t size) {
    // allocate block of |size| and 0 initialize it
-   void *block = myMalloc(nmemb * size);
+   void *block = malloc(nmemb * size);
    memset(block, 0, nmemb * size);
    return block;
 }
 
-void *myMalloc(size_t size) {
+void *malloc(size_t size) {
    Header *curr = freelist, *prev = NULL, *first = NULL;
 
    // 16-divisiblity
@@ -195,8 +194,8 @@ void *myMalloc(size_t size) {
 }
 
 
-void myFree(void *ptr) {
-   // return out of myFree if ptr is NULL
+void free(void *ptr) {
+   // return out of free if ptr is NULL
    if (!ptr)
       return;
 
@@ -213,10 +212,10 @@ void myFree(void *ptr) {
    h->free = 1;
 }
 
-void *myRealloc(void *ptr, size_t size) {
+void *realloc(void *ptr, size_t size) {
    // if first argument is NULL, do malloc
    if (!ptr)
-      return myMalloc(size);
+      return malloc(size);
    defrag();
 
    Header *curr = (Header *)ptr - 1;
@@ -253,7 +252,7 @@ void *myRealloc(void *ptr, size_t size) {
    else {   // malloc new extended space and copy the data over
       curr->free = 1;
       char *oldLocation = ++curr;
-      char *newLocation = myMalloc(size);
+      char *newLocation = malloc(size);
       
       if (!newLocation) {
          curr->free = 0;

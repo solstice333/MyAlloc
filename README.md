@@ -12,9 +12,15 @@ $ export LD_LIBRARY_PATH
 $ make
 ```
 
-Compile with custom malloc:
+Compile with custom malloc on x64:
 
 `$ gcc test.c lib64/libmalloc.so`
+
+OR
+
+Compile with custom malloc on x86:
+
+`$ gcc test.c lib/libmalloc.so`
 
 OR
 
