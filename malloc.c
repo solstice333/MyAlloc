@@ -153,11 +153,19 @@ void *calloc(size_t nmemb, size_t size) {
    // allocate block of |size| and 0 initialize it
    void *block = malloc(nmemb * size);
    memset(block, 0, nmemb * size);
+
+#if DEBUG_MALLOC
+   snprintf(buffer, BUFSIZE, "MALLOC: calloc(%d, %d) => (ptr=%p, size=%d)\n",
+    nmemb, size, block, ((Header *)block)[-1].size); 
+   fputs(buffer, stderr);
+#endif
+
    return block;
 }
 
 void *malloc(size_t size) {
    Header *curr = freelist, *prev = NULL, *first = NULL;
+   int desiredSize = size;
 
    // 16-divisiblity
    while (size % 16)
@@ -175,7 +183,13 @@ void *malloc(size_t size) {
 
          // if curr->size is equal to desired alloc size only do this
          curr->free = 0;
-         return ++curr;
+
+#if DEBUG_MALLOC
+         snprintf(buffer, BUFSIZE, "MALLOC: malloc(%d) => (ptr=%p, size=%d)\n", 
+          desiredSize, curr + 1, curr->size); 
+         fputs(buffer, stderr);
+#endif
+         return curr + 1;
       }
 
       curr = curr->next;
@@ -190,7 +204,13 @@ void *malloc(size_t size) {
    header->size = size;
    push_back(header);
 
-   return ++header;
+#if DEBUG_MALLOC
+   snprintf(buffer, BUFSIZE, "MALLOC: malloc(%d) => (ptr=%p, size=%d)\n", 
+    desiredSize, header + 1, header->size); 
+   fputs(buffer, stderr);
+#endif
+
+   return header + 1;
 }
 
 
@@ -210,12 +230,29 @@ void free(void *ptr) {
    // change free value to true
    h = (Header *)prev;
    h->free = 1;
+
+#if DEBUG_MALLOC
+   snprintf(buffer, BUFSIZE, "MALLOC: free(%p)\n", ptr);
+   fputs(buffer, stderr);
+#endif
 }
 
 void *realloc(void *ptr, size_t size) {
+   int desiredSize = size;
+
    // if first argument is NULL, do malloc
-   if (!ptr)
-      return malloc(size);
+   if (!ptr) {
+      void *block = malloc(size);
+
+#if DEBUG_MALLOC
+      snprintf(buffer, BUFSIZE, "MALLOC: realloc(%p, %d) => (ptr=%p, " 
+       "size=%d)\n",
+       ptr, desiredSize, block, ((Header *)block)[-1].size);
+      fputs(buffer, stderr);
+#endif
+
+      return block;
+   }
    defrag();
 
    Header *curr = (Header *)ptr - 1;
@@ -262,6 +299,12 @@ void *realloc(void *ptr, size_t size) {
       memmove(newLocation, oldLocation, curr->size);
       curr = (Header *)newLocation - 1;
    }
+
+#if DEBUG_MALLOC
+   snprintf(buffer, BUFSIZE, "MALLOC: realloc(%p, %d) => (ptr=%p, size=%d)\n",
+    ptr, desiredSize, curr + 1, curr->size);
+   fputs(buffer, stderr);
+#endif
 
    return curr + 1;
 }
