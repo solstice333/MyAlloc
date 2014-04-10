@@ -81,7 +81,7 @@ static Header *carveHeader(int size, Header *curr) {
    char *pos = curr;
    Header *newHeader = (Header *)(pos + sizeof(Header) + size);
    newHeader->free = 1;
-   newHeader->size = curr->size - size - sizeof(Header);
+   newHeader->size = curr->size - size;
    newHeader->next = curr->next;
    curr->next = newHeader;
    return newHeader;

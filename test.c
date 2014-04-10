@@ -3,7 +3,7 @@
 #include <assert.h>
 
 // set these to 0 to get it to work for both stdlib.h and custom
-#define CHECK_FREELIST 0
+#define CHECK_FREELIST 1
 #define FREE_X_PLUS_4 0
 
 #define BUFSIZE 1024
