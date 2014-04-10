@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
       assert(!x[i]);
    fprintf(stderr, "\n");
 
-   myFree(myMalloc(65536));
+   myFree(myMalloc(65000));
    simplePrint("allocating then freeing 64K...");
    checkFreelist();
 
@@ -91,8 +91,14 @@ int main(int argc, char **argv) {
    for (i = 0; i < 32768; i++) 
       x[i] = 100;
 
-   fprintf(stderr, "\n");
+   x = myRealloc(x, 16120);
+   simplePrint("realloc that 32768 down to 16120...");
+   checkFreelist();
 
+   for (i = 0; i < 16120; i++) 
+      assert(x[i] == 100);
+
+   fprintf(stderr, "\n");
 
 #elif USING_REG_MALLOC
    int *x = malloc(16000 * sizeof(int));

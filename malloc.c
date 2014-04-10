@@ -1,6 +1,72 @@
-#include "malloc.h"
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+#include <sys/types.h>
 
+#define DEBUG_MALLOC 1
+#define BUFSIZE 512
+
+/*
+ * Contains information of the allocated block such as the size of the block 
+ * |size| and if it is free |free|. Also contains a pointer to the next Header
+ * in the freelist.
+ */
+typedef struct Header {
+   int free, size;
+   struct Header *next;
+} Header;
+
+/*
+ * Traverses the freelist and prints out header information
+ */
+void checkFreelist();
+
+/*
+ * Allocates a block of memory for an array of |nmemb| elements, each of them 
+ * |size| bytes long, and initializes all its bits to zero. The effective 
+ * result is the allocation of a zero-initialized memory block of 
+ * (|nmemb|*|size|) bytes.
+ */
+void *myCalloc(size_t nmemb, size_t size);
+
+/*
+ * Allocates a block of |size| bytes of memory, returning a pointer to the 
+ * beginning of the block. The content of the newly allocated block of memory 
+ * is not initialized, remaining with indeterminate values.
+ */
+void *myMalloc(size_t size);
+
+/*
+ * A block of memory previously allocated by a call to malloc, calloc or 
+ * realloc is deallocated, making it available again for further allocations. 
+ * If |ptr| does not point to a block of memory allocated with the above 
+ * functions, it causes undefined behavior. If |ptr| is a null pointer, the 
+ * function does nothing. Notice that this function does not change the value 
+ * of ptr itself, hence it still points to the same (now invalid) location.
+ */
+void myFree(void *ptr);
+
+/*
+ * Changes the size of the memory block pointed to by |ptr|. The function may 
+ * move the memory block to a new location (whose address is returned by the 
+ * function). The content of the memory block is preserved up to the lesser 
+ * of the new and old sizes, even if the block is moved to a new location. 
+ * If the new size is larger, the value of the newly allocated portion is 
+ * indeterminate. In case that |ptr| is a null pointer, the function behaves 
+ * like malloc, assigning a new block of |size| bytes and returning a pointer 
+ * to its beginning.
+ */
+void *myRealloc(void *ptr, size_t size);
+
+/*
+ * The freelist is a linked list implementation of Header objects such that
+ * in between Headers, are allocated blocks of space in the heap.
+ */
 static Header *freelist = NULL;
+
+/*
+ * Used for snprintf
+ */
 static char buffer[BUFSIZE];
 
 /*
@@ -71,9 +137,6 @@ static void defrag() {
    }
 }
 
-/*
- * Traverses the freelist and prints out header information
- */
 void checkFreelist() {
    Header *h = freelist;
    while (h) {
@@ -131,10 +194,9 @@ void *myMalloc(size_t size) {
    return ++header;
 }
 
-// TODO add in functionality for freeing a block if given a pointer to somewhere
-// in the middle of that block
+
 void myFree(void *ptr) {
-   // return out of myFree if ptr is NULL for snprintf
+   // return out of myFree if ptr is NULL
    if (!ptr)
       return;
 
@@ -151,8 +213,6 @@ void myFree(void *ptr) {
    h->free = 1;
 }
 
-// TODO add in functionality for freeing a block if given a pointer to somewhere
-// in the middle of that block
 void *myRealloc(void *ptr, size_t size) {
    // if first argument is NULL, do malloc
    if (!ptr)
