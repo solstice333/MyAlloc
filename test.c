@@ -34,20 +34,24 @@ int main(int argc, char **argv) {
    simplePrint("freeing that 5 bytes...");
    checkFreelist();
 
-   y = myMalloc(7); 
-   simplePrint("allocating 7 bytes...");
+   myFree(myMalloc(7)); 
+   simplePrint("allocating and freeing 7 bytes...");
    checkFreelist();
 
    z = myMalloc(10); 
-   simplePrint("allocating 7 bytes...");
+   simplePrint("allocating 10 bytes...");
    checkFreelist();
 
    myFree(z); 
    simplePrint("freeing that 10 bytes...");
    checkFreelist();
 
-   x = myRealloc(x, 20);
-   simplePrint("reallcating 20 bytes...");
+   myFree(x + 4);
+   simplePrint("freeing old x...");
+   checkFreelist();
+
+   x = myRealloc(x, 50);
+   simplePrint("reallcating 50 bytes...");
    checkFreelist();
 
    for (i = 0; i < 5; i++)
@@ -55,6 +59,7 @@ int main(int argc, char **argv) {
    fprintf(stderr, "\n");
 
    x = myRealloc(NULL, 20);
+   simplePrint("reallocating NULL to 20 bytes...");
    checkFreelist();
 
    for (i = 0; i < 20; i++)
@@ -62,18 +67,23 @@ int main(int argc, char **argv) {
    fprintf(stderr, "\n");
 
    myFree(x);
+   simplePrint("freeing x...");
    checkFreelist();
 
    x = myCalloc(20, 1);
+   simplePrint("calloc 20 bytes");
    checkFreelist();
 
    for (i = 0; i < 20; i++)
-      fprintf(stderr, "%d\n", x[i]);
+      assert(!x[i]);
    fprintf(stderr, "\n");
 
    myFree(myMalloc(65536));
+   simplePrint("allocating then freeing 64K...");
    checkFreelist();
+
    x = myCalloc(32768, 1);
+   simplePrint("calloc 32768 bytes and assigning to x...");
    checkFreelist();
 
    for (i = 0; i < 32768; i++)

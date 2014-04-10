@@ -50,10 +50,15 @@ static void defrag() {
 
    while (curr) {
       if (curr->free) {
+         // find the first block in a series of free blocks
          if (!prev || !prev->free) 
             first = curr; 
 
+         // obtain rolling sum of space that can be merged together
          sum += curr->size;
+
+         // reset sum and redirect pointers if at the end of the
+         // series of free blocks
          if (!curr->next || !curr->next->free) {
             first->size = sum;
             sum = 0;
@@ -83,6 +88,7 @@ void checkFreelist() {
 }
 
 void *myCalloc(size_t nmemb, size_t size) {
+   // allocate block of |size| and 0 initialize it
    void *block = myMalloc(nmemb * size);
    memset(block, 0, nmemb * size);
    return block;
@@ -91,13 +97,21 @@ void *myCalloc(size_t nmemb, size_t size) {
 void *myMalloc(size_t size) {
    Header *curr = freelist, *prev = NULL, *first = NULL;
 
+   // 16-divisiblity
+   while (size % 16)
+      size++;
+
+   // defrag contiguous free blocks then iterate over the freelist
    defrag(); 
    while (curr) {
       if (curr->free && curr->size >= size) {
+         // carve out block if free block is big enough
          if (curr->size > size) {
             curr->next = carveHeader(size, curr);
             curr->size = size;
          }
+
+         // if curr->size is equal to desired alloc size only do this
          curr->free = 0;
          return ++curr;
       }
@@ -105,6 +119,7 @@ void *myMalloc(size_t size) {
       curr = curr->next;
    }
 
+   // extend section break if no blocks are available
    Header *header = sbrk(sizeof(Header) + size);     
    if (header < 0)
       return NULL;
@@ -116,12 +131,30 @@ void *myMalloc(size_t size) {
    return ++header;
 }
 
+// TODO add in functionality for freeing a block if given a pointer to somewhere
+// in the middle of that block
 void myFree(void *ptr) {
-   Header *h = (Header *)ptr - 1;
+   // return out of myFree if ptr is NULL for snprintf
+   if (!ptr)
+      return;
+
+   // find the header that associates to |ptr| in cases where |ptr| could be
+   // pointing to somewhere in the middle of a block
+   Header *h = freelist, *prev = NULL;
+   while (h && h < ptr) {
+      prev = h;
+      h = h->next;
+   }
+
+   // change free value to true
+   h = (Header *)prev;
    h->free = 1;
 }
 
+// TODO add in functionality for freeing a block if given a pointer to somewhere
+// in the middle of that block
 void *myRealloc(void *ptr, size_t size) {
+   // if first argument is NULL, do malloc
    if (!ptr)
       return myMalloc(size);
    defrag();
@@ -129,14 +162,20 @@ void *myRealloc(void *ptr, size_t size) {
    Header *curr = (Header *)ptr - 1;
    int sum = curr->size;
 
+   // track how much free continguous space we have to do an in-place
+   // expansion
    curr = curr->next;
    while (curr && curr->free) {
       sum += curr->size;
       curr = curr->next;
    }
 
+   // 16 divisibility
+   while (size % 16)
+      size++;
+
    curr = (Header *)ptr - 1;
-   if (sum >= size) {
+   if (sum >= size) {   // in-place expansion
       if (sum > size) {
          Header *oldHeader = curr->next;
          Header *newHeader = (char *)curr + sizeof(Header) + size;
@@ -151,10 +190,16 @@ void *myRealloc(void *ptr, size_t size) {
 
       curr->size = size;
    }
-   else {
-      curr->free = 0;
+   else {   // malloc new extended space and copy the data over
+      curr->free = 1;
       char *oldLocation = ++curr;
       char *newLocation = myMalloc(size);
+      
+      if (!newLocation) {
+         curr->free = 0;
+         return NULL;
+      }
+
       memmove(newLocation, oldLocation, curr->size);
       curr = (Header *)newLocation - 1;
    }
