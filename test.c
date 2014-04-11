@@ -6,6 +6,9 @@
 #define CHECK_FREELIST 1
 #define FREE_X_PLUS_4 0
 
+#define TEST1 0
+#define TEST2 1
+
 #define BUFSIZE 1024
 
 void simplePrint(char *s) {
@@ -19,6 +22,7 @@ int main(int argc, char **argv) {
    char *x, *y, *z;
    int i;
 
+#if TEST1
    x = malloc(5);
    simplePrint("allocating 5 bytes...");
 
@@ -141,6 +145,15 @@ int main(int argc, char **argv) {
 
    for (i = 0; i < 16120; i++) 
       assert(x[i] == 100);
+#endif
+
+
+#if TEST2
+   x = malloc(10);
+   checkFreelist();
+   x = realloc(x, 30);
+   checkFreelist();
+#endif
 
    return 0;
 }

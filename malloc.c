@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#define DEBUG_MALLOC 1
+#define DEBUG_MALLOC 0
 #define BUFSIZE 512
 
 /*
@@ -271,7 +271,7 @@ void *realloc(void *ptr, size_t size) {
       size++;
 
    curr = (Header *)ptr - 1;
-   if (sum >= size) {   // in-place expansion
+   if (sum >= size) {   // in-place expansion without moving the section break
       if (sum > size) {
          Header *oldHeader = curr->next;
          Header *newHeader = (char *)curr + sizeof(Header) + size;
@@ -281,9 +281,13 @@ void *realloc(void *ptr, size_t size) {
 
          curr->next = newHeader;
       }
-      else if (sum == size) 
+      else if (sum == size && curr->next) 
          curr->next = curr->next->next;
 
+      curr->size = size;
+   }
+   else if (!curr->next) { // in-place expansion with moving the section break 
+      sbrk(size - curr->size); 
       curr->size = size;
    }
    else {   // malloc new extended space and copy the data over
