@@ -271,37 +271,34 @@ void *realloc(void *ptr, size_t size) {
       size++;
 
    curr = (Header *)ptr - 1;
-   if (sum >= size) {   // in-place expansion without moving the section break
-      if (sum > size) {
-         Header *oldHeader = curr->next;
-         Header *newHeader = (char *)curr + sizeof(Header) + size;
-         newHeader->next = oldHeader->next;
-         newHeader->size = sum - size;
-         newHeader->free = 1;
+   if (sum > size && curr->next) {   // in-place expansion w/o moving sbrk
+      Header *oldHeader = curr->next;
+      Header *newHeader = (char *)curr + sizeof(Header) + size;
+      newHeader->next = oldHeader->next;
+      newHeader->size = sum - size;
+      newHeader->free = 1;
 
-         curr->next = newHeader;
-      }
-      else if (sum == size && curr->next) 
-         curr->next = curr->next->next;
-
+      curr->next = newHeader;
       curr->size = size;
    }
-   else if (!curr->next) { // in-place expansion with moving the section break 
-      sbrk(size - curr->size); 
-      curr->size = size;
-   }
-   else {   // malloc new extended space and copy the data over
-      curr->free = 1;
-      char *oldLocation = ++curr;
-      char *newLocation = malloc(size);
-      
-      if (!newLocation) {
-         curr->free = 0;
-         return NULL;
+   else if (sum < size) {
+      if (!curr->next) { // in-place expansion w/ moving sbrk
+         sbrk(size - curr->size); 
+         curr->size = size;
       }
+      else {   // malloc new location, copy data
+         curr->free = 1;
+         char *oldLocation = ++curr;
+         char *newLocation = malloc(size);
+         
+         if (!newLocation) {
+            curr->free = 0;
+            return NULL;
+         }
 
-      memmove(newLocation, oldLocation, curr->size);
-      curr = (Header *)newLocation - 1;
+         memmove(newLocation, oldLocation, curr->size);
+         curr = (Header *)newLocation - 1;
+      }
    }
 
 #if DEBUG_MALLOC

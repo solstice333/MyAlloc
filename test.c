@@ -6,8 +6,13 @@
 #define CHECK_FREELIST 1
 #define FREE_X_PLUS_4 0
 
+// executes the first test that is seen as true
 #define TEST1 0
-#define TEST2 1
+#define TEST2 0
+#define TEST3 0
+#define TEST4 0
+#define TEST5 0
+#define TEST6 1
 
 #define BUFSIZE 1024
 
@@ -145,14 +150,47 @@ int main(int argc, char **argv) {
 
    for (i = 0; i < 16120; i++) 
       assert(x[i] == 100);
-#endif
 
-
-#if TEST2
+#elif TEST2
    x = malloc(10);
    checkFreelist();
    x = realloc(x, 30);
    checkFreelist();
+
+#elif TEST3
+   x = malloc(10);
+   checkFreelist();
+   x = realloc(x, 2);
+   checkFreelist();
+
+#elif TEST4
+   for (i = 0; i < 128; i++)
+      x = realloc(NULL, 65535);
+   checkFreelist();
+#elif TEST5
+   for (i = 0; i < 32; i++) {
+      if (i < 15) {
+         if (i % 2) 
+            x = realloc(x, 32768);
+         else 
+            x = malloc(65536);
+      }
+      else {
+         if (i % 2) 
+            x = realloc(x, 45);
+         else
+            x = malloc(32);
+      }
+   }
+   checkFreelist();
+#elif TEST6
+   for (i = 0; i < 100; i++) {
+      x = malloc(0);
+      x = realloc(x, 0);
+   }
+
+   checkFreelist();
+
 #endif
 
    return 0;
